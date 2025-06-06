@@ -1,6 +1,9 @@
-function StartFarming()
+-- CTX_HUB Key System + Script de Farmeo + Minimizar + BotÃ³n flotante con arrastre
+
+local function loadPaidScript()
     local a = game:GetService("ReplicatedStorage")
-    local c = game:GetService("Players").LocalPlayer
+    local b = game:GetService("Players")
+    local c = b.LocalPlayer
 
     local function d()
         local f = c:FindFirstChild("petsFolder")
@@ -93,36 +96,147 @@ function StartFarming()
         u:SendKeyEvent(false, "E", false, game)
     end
 
-    local farmingEnabled = true
-    task.spawn(function()
-        local targetRebirths = tonumber((_G.RebirthInputBox and _G.RebirthInputBox.Text) or "10") or 10
-        while farmingEnabled and c.leaderstats.Rebirths.Value < targetRebirths do
-            local v = c.leaderstats.Rebirths.Value
-            local w = 10000 + (5000 * v)
-            if c.ultimatesFolder:FindFirstChild("Golden Rebirth") then
-                local x = c.ultimatesFolder["Golden Rebirth"].Value
-                w = math.floor(w * (1 - (x * 0.1)))
-            end
-            k()
-            while c.leaderstats.Strength.Value < w and farmingEnabled do
-                for _ = 1, 10 do
-                    c.muscleEvent:FireServer("rep")
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "StrengthFarmPanel"
+    screenGui.Parent = c.PlayerGui
+
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0, 200, 0, 150)
+    frame.Position = UDim2.new(0, 10, 0, 10)
+    frame.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+    frame.Parent = screenGui
+
+    local toggleButton = Instance.new("TextButton")
+    toggleButton.Name = "toggleButton"
+    toggleButton.Size = UDim2.new(0, 180, 0, 40)
+    toggleButton.Position = UDim2.new(0, 10, 0, 10)
+    toggleButton.Text = "Iniciar Fuerza"
+    toggleButton.BackgroundColor3 = Color3.new(0.3, 0.3, 0.3)
+    toggleButton.TextColor3 = Color3.new(1, 1, 1)
+    toggleButton.Parent = frame
+
+    local statusLabel = Instance.new("TextLabel")
+    statusLabel.Size = UDim2.new(0, 180, 0, 20)
+    statusLabel.Position = UDim2.new(0, 10, 0, 50)
+    statusLabel.Text = "Estado: Detenido"
+    statusLabel.BackgroundColor3 = Color3.new(0.1, 0.1, 0.1)
+    statusLabel.TextColor3 = Color3.new(1, 1, 1)
+    statusLabel.Parent = frame
+
+    local rebirthLabel = Instance.new("TextLabel")
+    rebirthLabel.Size = UDim2.new(0, 100, 0, 20)
+    rebirthLabel.Position = UDim2.new(0, 10, 0, 80)
+    rebirthLabel.Text = "Renacimientos:"
+    rebirthLabel.BackgroundColor3 = Color3.new(0.1, 0.1, 0.1)
+    rebirthLabel.TextColor3 = Color3.new(1, 1, 1)
+    rebirthLabel.Parent = frame
+
+    local rebirthTextBox = Instance.new("TextBox")
+    rebirthTextBox.Size = UDim2.new(0, 70, 0, 20)
+    rebirthTextBox.Position = UDim2.new(0, 115, 0, 80)
+    rebirthTextBox.Text = "10"
+    rebirthTextBox.BackgroundColor3 = Color3.new(0.3, 0.3, 0.3)
+    rebirthTextBox.TextColor3 = Color3.new(1, 1, 1)
+    rebirthTextBox.Parent = frame
+
+    local openButton = Instance.new("TextButton")
+    openButton.Size = UDim2.new(0, 40, 0, 40)
+    openButton.Position = UDim2.new(0, 5, 0, 5)
+    openButton.Text = "â˜°"
+    openButton.BackgroundColor3 = Color3.new(0.5, 0.5, 0.5)
+    openButton.TextColor3 = Color3.new(1, 1, 1)
+    openButton.Parent = screenGui
+    openButton.Visible = false
+
+    local dragging, dragInput, dragStart, startPos
+
+    openButton.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = openButton.Position
+
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
                 end
-                task.wait()
-            end
-            if not farmingEnabled then break end
-            equipTribalOverlords()
-            local z = o("Jungle Bar Lift")
-            if z and z:FindFirstChild("interactSeat") then
-                c.Character.HumanoidRootPart.CFrame = z.interactSeat.CFrame * CFrame.new(0, 3, 0)
-                repeat task.wait(0.1) t() until c.Character.Humanoid.Sit or not farmingEnabled
-            end
-            if not farmingEnabled then break end
-            local A = c.leaderstats.Rebirths.Value
-            repeat a.rEvents.rebirthRemote:InvokeServer("rebirthRequest") task.wait(0.1)
-            until c.leaderstats.Rebirths.Value > A or not farmingEnabled
-            task.wait()
+            end)
         end
-        farmingEnabled = false
+    end)
+
+    openButton.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then
+            dragInput = input
+        end
+    end)
+
+    game:GetService("UserInputService").InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - dragStart
+            openButton.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+
+    openButton.MouseButton1Click:Connect(function()
+        frame.Visible = true
+        openButton.Visible = false
+    end)
+
+    local minimizeBtn = Instance.new("TextButton")
+    minimizeBtn.Size = UDim2.new(0, 30, 0, 30)
+    minimizeBtn.Position = UDim2.new(0, 170, 0, 0)
+    minimizeBtn.Text = "-"
+    minimizeBtn.Parent = frame
+
+    minimizeBtn.MouseButton1Click:Connect(function()
+        frame.Visible = false
+        openButton.Visible = true
+    end)
+
+    local farmingEnabled = false
+    toggleButton.MouseButton1Click:Connect(function()
+        farmingEnabled = not farmingEnabled
+        if farmingEnabled then
+            toggleButton.Text = "Detener Fuerza"
+            statusLabel.Text = "Estado: En ejecuciÃ³n"
+            task.spawn(function()
+                local targetRebirths = tonumber(rebirthTextBox.Text) or 10
+                while farmingEnabled and c.leaderstats.Rebirths.Value < targetRebirths do
+                    local v = c.leaderstats.Rebirths.Value
+                    local w = 10000 + (5000 * v)
+                    if c.ultimatesFolder:FindFirstChild("Golden Rebirth") then
+                        local x = c.ultimatesFolder["Golden Rebirth"].Value
+                        w = math.floor(w * (1 - (x * 0.1)))
+                    end
+                    k()
+                    while c.leaderstats.Strength.Value < w and farmingEnabled do
+                        for _ = 1, 10 do
+                            c.muscleEvent:FireServer("rep")
+                        end
+                        task.wait()
+                    end
+                    if not farmingEnabled then break end
+                    equipTribalOverlords()
+                    local z = o("Jungle Bar Lift")
+                    if z and z:FindFirstChild("interactSeat") then
+                        c.Character.HumanoidRootPart.CFrame = z.interactSeat.CFrame * CFrame.new(0, 3, 0)
+                        repeat task.wait(0.1) t() until c.Character.Humanoid.Sit or not farmingEnabled
+                    end
+                    if not farmingEnabled then break end
+                    local A = c.leaderstats.Rebirths.Value
+                    repeat a.rEvents.rebirthRemote:InvokeServer("rebirthRequest") task.wait(0.1)
+                    until c.leaderstats.Rebirths.Value > A or not farmingEnabled
+                    task.wait()
+                end
+                toggleButton.Text = "Iniciar Fuerza"
+                statusLabel.Text = "Estado: Detenido"
+                farmingEnabled = false
+            end)
+        else
+            toggleButton.Text = "Iniciar Fuerza"
+            statusLabel.Text = "Estado: Detenido"
+        end
     end)
 end
+
+loadPaidScript()
